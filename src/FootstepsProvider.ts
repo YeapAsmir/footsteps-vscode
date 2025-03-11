@@ -18,7 +18,8 @@ export class FootstepsProvider {
     private history: History = [];
     private currentHistoryIndex: number = 0;
     private decorationTypes: TextEditorDecorationType[][] = [];
-    private editorFileNames: string[] = []
+    private nearCursorDecorationTypes: TextEditorDecorationType[][] = [];
+    private editorFileNames: string[] = [];
     private maxNumberOfChangesToRemember: number = 10;
     private clearChangesOnFileSave: boolean = false;
     private maxNumberOfChangesToHighlight: number = 6;
@@ -68,7 +69,6 @@ export class FootstepsProvider {
                 this.onClearChangesWithinFile(document, editor);
             }
         });
-
     }
 
     private onSyncWithSettings(): void {
@@ -78,21 +78,17 @@ export class FootstepsProvider {
             this.clearChanges();
         }
 
-        this.maxNumberOfChangesToRemember =
-            userSetting.maxNumberOfChangesToRemember;
+        this.maxNumberOfChangesToRemember = userSetting.maxNumberOfChangesToRemember;
         this.clearChangesOnFileSave = userSetting.clearChangesOnFileSave;
-        this.maxNumberOfChangesToHighlight =
-            userSetting.maxNumberOfChangesToHighlight;
-        this.minDistanceFromCursorToHighlight =
-            userSetting.minDistanceFromCursorToHighlight;
+        this.maxNumberOfChangesToHighlight = userSetting.maxNumberOfChangesToHighlight;
+        this.minDistanceFromCursorToHighlight = userSetting.minDistanceFromCursorToHighlight;
         this.highlightColor = userSetting.highlightColor;
         this.doHighlightChanges = userSetting.doHighlightChanges;
         this.doHighlightOnClick = userSetting.doHighlightOnClick;
         this.doHighlightEmptyLines = userSetting.doHighlightEmptyLines;
         this.doHighlightInactiveEditors = userSetting.doHighlightInactiveEditors;
         this.highlightColorMaxOpacity = userSetting.highlightColorMaxOpacity;
-        this.doHighlightCurrentlyFocusedChunk =
-            userSetting.doHighlightCurrentlyFocusedChunk;
+        this.doHighlightCurrentlyFocusedChunk = userSetting.doHighlightCurrentlyFocusedChunk;
         this.doHighlightChangesPerLanguage = {};
     }
 
@@ -100,7 +96,10 @@ export class FootstepsProvider {
         const maxFilesToHighlight = 10;
         this.decorationTypes = new Array(maxFilesToHighlight).fill(0).map(() => (
             this.getDecorationTypes()
-        ))
+        ));
+        this.nearCursorDecorationTypes = new Array(maxFilesToHighlight).fill(0).map(() => (
+            this.getNearCursorDecorationTypes()
+        ));
     }
 
     private getDecorationTypes(): TextEditorDecorationType[] {
@@ -119,80 +118,31 @@ export class FootstepsProvider {
                 ].join(""),
                 isWholeLine: true,
             })
-        )
+        );
+    }
+
+    private getNearCursorDecorationTypes(): TextEditorDecorationType[] {
+        const getOpacity = (index: number) => {
+            const percentAlong = index / this.maxNumberOfChangesToHighlight;
+            // Réduire l'opacité pour les lignes proches du curseur (environ 30% de l'opacité normale)
+            return this.highlightColorMaxOpacity * (1 - percentAlong) * 0.3;
+        };
+
+        return new Array(this.maxNumberOfChangesToHighlight).fill(0).map((_, i) =>
+            window.createTextEditorDecorationType({
+                backgroundColor: [
+                    this.highlightColor.replace("rgb", "rgba").replace(/\)/g, ""),
+                    ", ",
+                    getOpacity(i),
+                    ")",
+                ].join(""),
+                isWholeLine: true,
+            })
+        );
     }
 
     private isCodeEditor(document: TextDocument): boolean {
         return document.uri.scheme === "file";
-    }
-
-    public async onHighlightChanges(): Promise<void> {
-        if (!this.doHighlightChanges) return;
-
-        const highlightChangesInEditor = (editor: TextEditor, editorIndex: number) => {
-            const uri = editor.document.uri.fsPath;
-            if (this.editorFileNames[editorIndex] !== uri) {
-                const existingIndex = this.editorFileNames.indexOf(uri);
-                if (existingIndex !== -1) {
-                    this.clearChanges(existingIndex);
-                }
-                this.editorFileNames[editorIndex] = uri;
-            }
-
-            this.clearChanges(editorIndex);
-            const isCodeEditor = this.isCodeEditor(editor.document);
-            if (!isCodeEditor) return;
-
-            const language = editor.document.languageId;
-            const doHighlightChangesForLanguage = this.doHighlightChangesPerLanguage[language]
-                || workspace.getConfiguration("footsteps", {
-                    languageId: language,
-                }).doHighlightChanges;
-            if (!doHighlightChangesForLanguage) return;
-
-            const fileName = editor.document.fileName || "";
-
-            let currentRange: number[] = [0, 0];
-            if (editor?.selection) {
-                currentRange = [editor.selection.start.line, editor.selection.end.line];
-            }
-
-            const fileChanges = this.getChangesInFile(fileName);
-
-            fileChanges.forEach(([_, lines], index: number) => {
-                let linesOutsideOfCursorRange = lines;
-                if (editor.selection) {
-                    if (!this.doHighlightCurrentlyFocusedChunk) {
-                        const linesRange = [Math.min(...lines), Math.max(...lines)];
-                        const isCurrentChunk =
-                            linesRange[0] <= currentRange[0] && linesRange[1] >= currentRange[1];
-                        if (isCurrentChunk) {
-                            onHighlightLine(editor, linesRange, this.clearDecoration);
-                            return;
-                        }
-                    }
-                    if (this.minDistanceFromCursorToHighlight) {
-                        linesOutsideOfCursorRange = lines.filter(line => {
-                            const isLineAboveCursor = line < currentRange[0] - this.minDistanceFromCursorToHighlight;
-                            const isLineBelowCursor = line > currentRange[1] + this.minDistanceFromCursorToHighlight;
-                            const doShow = isLineAboveCursor || isLineBelowCursor;
-                            if (!doShow) {
-                                onHighlightLine(editor, [line], this.clearDecoration);
-                            }
-                            return doShow;
-                        });
-                    }
-                }
-                if (!this.decorationTypes?.[editorIndex]?.[index]) return;
-                onHighlightLine(editor, linesOutsideOfCursorRange, this.decorationTypes[editorIndex][index]);
-            });
-        };
-
-        const editors = this.doHighlightInactiveEditors ? window.visibleTextEditors : [window.activeTextEditor];
-        editors.forEach((editor, i) => {
-            if (!editor) return;
-            highlightChangesInEditor(editor, i);
-        });
     }
 
     private addChangeToHistory(
@@ -236,6 +186,7 @@ export class FootstepsProvider {
             ([changeFileName]: HistoryItem) => changeFileName === fileName
         );
     }
+
     private getChangesInOtherFiles(fileName: string): History {
         return this.history.filter(
             ([changeFileName]: HistoryItem) => changeFileName !== fileName
@@ -280,8 +231,6 @@ export class FootstepsProvider {
         line: number,
         character: number
     ): void {
-        const editor = window.activeTextEditor;
-
         const newPosition = new Position(line, character);
         const newSelection = new Selection(newPosition, newPosition);
 
@@ -291,7 +240,7 @@ export class FootstepsProvider {
         );
 
         workspace.openTextDocument(Uri.file(fileName)).then((doc) => {
-            window.showTextDocument(doc).then(() => {
+            window.showTextDocument(doc).then((editor) => {
                 if (!editor) {
                     return;
                 }
@@ -315,7 +264,6 @@ export class FootstepsProvider {
 
         const newText = contentChanges[0].text;
 
-        // don't add blank changes to history
         if (!newText || !newText.replace(/[\n| ]/g, "").length) {
             return;
         }
@@ -335,7 +283,7 @@ export class FootstepsProvider {
             new Array(numberOfLines + numberOfNewLines - numberOfLinesDeleted)
                 .fill(0)
                 .forEach((_, i: number) => {
-                    if (linesText[i].trim() !== "" || this.doHighlightEmptyLines) {
+                    if (linesText[i]?.trim() !== "" || this.doHighlightEmptyLines) {
                         linesSet.add(linesStart + i);
                     }
                 });
@@ -355,14 +303,7 @@ export class FootstepsProvider {
 
     public async onClearChangesWithinFile(document: TextDocument, editor: TextEditor) {
         this.history = this.history.filter(
-            ([changeFileName, changeLines]: HistoryItem) => {
-                const isCurrentFile = changeFileName === document.fileName;
-                if (isCurrentFile) {
-                    return false;
-                } else {
-                    return true;
-                }
-            }
+            ([changeFileName]: HistoryItem) => changeFileName !== document.fileName
         );
         const visibleEditorIndex = window.visibleTextEditors.findIndex(
             (visibleEditor) => visibleEditor.document.fileName === document.fileName
@@ -378,7 +319,7 @@ export class FootstepsProvider {
         this.onHighlightChanges();
         this.currentHistoryIndex = 0;
     }
-
+    
     private clearChanges(visibleEditorIndex?: number) {
         let index = 0;
         for (const fileDecorations of this.decorationTypes) {
@@ -386,59 +327,140 @@ export class FootstepsProvider {
                 for (const decoration of fileDecorations) {
                     decoration.dispose();
                 }
-                this.decorationTypes[index] = this.getDecorationTypes()
+                this.decorationTypes[index] = this.getDecorationTypes();
+                
+                // Nettoyer également les décorations proches du curseur
+                for (const decoration of this.nearCursorDecorationTypes[index]) {
+                    decoration.dispose();
+                }
+                this.nearCursorDecorationTypes[index] = this.getNearCursorDecorationTypes();
             }
             index++;
         }
     }
-
+    
     private updateStepWithContentChanges(
         [stepFileName, lines, lastPosition]: HistoryItem,
         contentChanges: TextDocumentContentChangeEvent[]
     ): HistoryItem {
         const editor = window.activeTextEditor;
         const fileName = editor?.document.fileName;
-
+    
         if (stepFileName !== fileName) {
             return [stepFileName, lines, lastPosition];
         }
-
+    
         let newLines = [...lines];
         let newLastLine = lastPosition[0];
-
-        contentChanges.forEach(({ range, rangeLength, text }) => {
-            if (lines.slice(-1)[0] < lines[0]) {
-                return lines;
+        let newLastChar = lastPosition[1];
+    
+        contentChanges.forEach(({ range, text }) => {
+            const linesAdded = text.split("\n").length - 1;
+            const linesRemoved = range.end.line - range.start.line;
+            const lineDelta = linesAdded - linesRemoved;
+    
+            newLines = newLines.map(line => {
+                if (line < range.start.line) {
+                    return line;
+                } else if (line === range.start.line) {
+                    return line;
+                } else if (line <= range.end.line) {
+                    return -1;
+                } else {
+                    return line + lineDelta;
+                }
+            }).filter(line => line >= 0);
+    
+            if (newLastLine > range.end.line) {
+                newLastLine += lineDelta;
+            } else if (newLastLine === range.end.line) {
+                newLastChar = Math.max(0, newLastChar + text.length - (range.end.character - range.start.character));
             }
-            // remove deleted lines
-            // newLines = rangeLength ? newLines.filter(line => (
-            //     line < range.start.line
-            //     || line > range.end.line
-            // )) : newLines;
-
-            let runningLineDiff = 0;
-
-            const numberOfNewLines = text.split("\n").length - 1;
-            const numberOfLinesDeleted = rangeLength
-                ? range.end.line - range.start.line
-                : 0;
-            runningLineDiff -= numberOfLinesDeleted;
-            runningLineDiff += numberOfNewLines;
-
-            if (newLastLine > range.start.line) {
-                newLastLine += runningLineDiff;
-            }
-
-            newLines = [
-                ...new Set(
-                    newLines.map((line) =>
-                        line <= range.start.line ? line : line + runningLineDiff
-                    )
-                ),
-            ].sort();
         });
-
-        const newLastPosition = [newLastLine, lastPosition[1]];
-        return [fileName, newLines, newLastPosition];
+    
+        return [fileName, Array.from(new Set(newLines)), [newLastLine, newLastChar]];
+    }
+    
+    public async onHighlightChanges(): Promise<void> {
+        if (!this.doHighlightChanges) return;
+    
+        const highlightChangesInEditor = (editor: TextEditor, editorIndex: number) => {
+            const uri = editor.document.uri.fsPath;
+            if (this.editorFileNames[editorIndex] !== uri) {
+                const existingIndex = this.editorFileNames.indexOf(uri);
+                if (existingIndex !== -1) {
+                    this.clearChanges(existingIndex);
+                }
+                this.editorFileNames[editorIndex] = uri;
+            }
+    
+            this.clearChanges(editorIndex);
+            const isCodeEditor = this.isCodeEditor(editor.document);
+            if (!isCodeEditor) return;
+    
+            const language = editor.document.languageId;
+            const doHighlightChangesForLanguage = this.doHighlightChangesPerLanguage[language]
+                || workspace.getConfiguration("footsteps", {
+                    languageId: language,
+                }).doHighlightChanges;
+            if (!doHighlightChangesForLanguage) return;
+    
+            const fileName = editor.document.fileName || "";
+            
+            const currentRange = editor.selection ? 
+                [editor.selection.start.line, editor.selection.end.line] : [0, 0];
+    
+            const fileChanges = this.getChangesInFile(fileName);
+    
+            fileChanges.forEach(([_, lines], index: number) => {
+                let linesToHighlight = [...lines];
+                let nearCursorLines: number[] = [];
+                
+                if (editor.selection && this.minDistanceFromCursorToHighlight) {
+                    // Séparer les lignes en deux groupes : celles proches du curseur et celles éloignées
+                    const { nearLines, farLines } = lines.reduce((acc, line) => {
+                        const isLineAboveCursor = line < currentRange[0] - this.minDistanceFromCursorToHighlight;
+                        const isLineBelowCursor = line > currentRange[1] + this.minDistanceFromCursorToHighlight;
+                        
+                        if (isLineAboveCursor || isLineBelowCursor) {
+                            acc.farLines.push(line);
+                        } else {
+                            acc.nearLines.push(line);
+                        }
+                        
+                        return acc;
+                    }, { nearLines: [] as number[], farLines: [] as number[] });
+                    
+                    linesToHighlight = farLines;
+                    nearCursorLines = nearLines;
+                }
+                
+                if (!this.doHighlightCurrentlyFocusedChunk && editor.selection) {
+                    const linesRange = [Math.min(...lines), Math.max(...lines)];
+                    const isCurrentChunk =
+                        linesRange[0] <= currentRange[0] && linesRange[1] >= currentRange[1];
+                    if (isCurrentChunk) {
+                        linesToHighlight = [];
+                        nearCursorLines = [];
+                    }
+                }
+                
+                if (!this.decorationTypes?.[editorIndex]?.[index]) return;
+                
+                // Appliquer les décorations normales aux lignes éloignées du curseur
+                onHighlightLine(editor, linesToHighlight, this.decorationTypes[editorIndex][index]);
+                
+                // Appliquer les décorations avec opacité réduite aux lignes proches du curseur
+                if (nearCursorLines.length > 0 && this.nearCursorDecorationTypes?.[editorIndex]?.[index]) {
+                    onHighlightLine(editor, nearCursorLines, this.nearCursorDecorationTypes[editorIndex][index]);
+                }
+            });
+        };
+    
+        const editors = this.doHighlightInactiveEditors ? window.visibleTextEditors : [window.activeTextEditor];
+        editors.forEach((editor, i) => {
+            if (!editor) return;
+            highlightChangesInEditor(editor, i);
+        });
     }
 }
