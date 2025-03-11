@@ -18,19 +18,18 @@ export class FootstepsProvider {
     private history: History = [];
     private currentHistoryIndex: number = 0;
     private decorationTypes: TextEditorDecorationType[][] = [];
-    private nearCursorDecorationTypes: TextEditorDecorationType[][] = [];
     private editorFileNames: string[] = [];
     private maxNumberOfChangesToRemember: number = 10;
     private clearChangesOnFileSave: boolean = false;
     private maxNumberOfChangesToHighlight: number = 6;
     private minDistanceFromCursorToHighlight: number = 3;
-    private highlightColor: string = "rgb(255, 99, 72)";
+    private highlightColor: string = "rgb(126, 107, 205)";
     private doHighlightChanges: boolean = true;
     private doHighlightOnClick: boolean = true;
     private doHighlightChangesPerLanguage: Record<string, boolean> = {};
     private doHighlightEmptyLines: boolean = true;
     private doHighlightInactiveEditors: boolean = true;
-    private highlightColorMaxOpacity: number = 0.6;
+    private highlightColorMaxOpacity: number = 0.4;
     private doHighlightCurrentlyFocusedChunk: boolean = true;
 
     constructor() {
@@ -97,35 +96,12 @@ export class FootstepsProvider {
         this.decorationTypes = new Array(maxFilesToHighlight).fill(0).map(() => (
             this.getDecorationTypes()
         ));
-        this.nearCursorDecorationTypes = new Array(maxFilesToHighlight).fill(0).map(() => (
-            this.getNearCursorDecorationTypes()
-        ));
     }
 
     private getDecorationTypes(): TextEditorDecorationType[] {
         const getOpacity = (index: number) => {
             const percentAlong = index / this.maxNumberOfChangesToHighlight;
             return this.highlightColorMaxOpacity * (1 - percentAlong);
-        };
-
-        return new Array(this.maxNumberOfChangesToHighlight).fill(0).map((_, i) =>
-            window.createTextEditorDecorationType({
-                backgroundColor: [
-                    this.highlightColor.replace("rgb", "rgba").replace(/\)/g, ""),
-                    ", ",
-                    getOpacity(i),
-                    ")",
-                ].join(""),
-                isWholeLine: true,
-            })
-        );
-    }
-
-    private getNearCursorDecorationTypes(): TextEditorDecorationType[] {
-        const getOpacity = (index: number) => {
-            const percentAlong = index / this.maxNumberOfChangesToHighlight;
-            // Réduire l'opacité pour les lignes proches du curseur (environ 30% de l'opacité normale)
-            return this.highlightColorMaxOpacity * (1 - percentAlong) * 0.3;
         };
 
         return new Array(this.maxNumberOfChangesToHighlight).fill(0).map((_, i) =>
@@ -328,12 +304,6 @@ export class FootstepsProvider {
                     decoration.dispose();
                 }
                 this.decorationTypes[index] = this.getDecorationTypes();
-                
-                // Nettoyer également les décorations proches du curseur
-                for (const decoration of this.nearCursorDecorationTypes[index]) {
-                    decoration.dispose();
-                }
-                this.nearCursorDecorationTypes[index] = this.getNearCursorDecorationTypes();
             }
             index++;
         }
@@ -413,26 +383,14 @@ export class FootstepsProvider {
             const fileChanges = this.getChangesInFile(fileName);
     
             fileChanges.forEach(([_, lines], index: number) => {
-                let linesToHighlight = [...lines];
-                let nearCursorLines: number[] = [];
+                let filteredLines = lines;
                 
                 if (editor.selection && this.minDistanceFromCursorToHighlight) {
-                    // Séparer les lignes en deux groupes : celles proches du curseur et celles éloignées
-                    const { nearLines, farLines } = lines.reduce((acc, line) => {
+                    filteredLines = filteredLines.filter(line => {
                         const isLineAboveCursor = line < currentRange[0] - this.minDistanceFromCursorToHighlight;
                         const isLineBelowCursor = line > currentRange[1] + this.minDistanceFromCursorToHighlight;
-                        
-                        if (isLineAboveCursor || isLineBelowCursor) {
-                            acc.farLines.push(line);
-                        } else {
-                            acc.nearLines.push(line);
-                        }
-                        
-                        return acc;
-                    }, { nearLines: [] as number[], farLines: [] as number[] });
-                    
-                    linesToHighlight = farLines;
-                    nearCursorLines = nearLines;
+                        return isLineAboveCursor || isLineBelowCursor;
+                    });
                 }
                 
                 if (!this.doHighlightCurrentlyFocusedChunk && editor.selection) {
@@ -440,20 +398,12 @@ export class FootstepsProvider {
                     const isCurrentChunk =
                         linesRange[0] <= currentRange[0] && linesRange[1] >= currentRange[1];
                     if (isCurrentChunk) {
-                        linesToHighlight = [];
-                        nearCursorLines = [];
+                        filteredLines = [];
                     }
                 }
                 
                 if (!this.decorationTypes?.[editorIndex]?.[index]) return;
-                
-                // Appliquer les décorations normales aux lignes éloignées du curseur
-                onHighlightLine(editor, linesToHighlight, this.decorationTypes[editorIndex][index]);
-                
-                // Appliquer les décorations avec opacité réduite aux lignes proches du curseur
-                if (nearCursorLines.length > 0 && this.nearCursorDecorationTypes?.[editorIndex]?.[index]) {
-                    onHighlightLine(editor, nearCursorLines, this.nearCursorDecorationTypes[editorIndex][index]);
-                }
+                onHighlightLine(editor, filteredLines, this.decorationTypes[editorIndex][index]);
             });
         };
     
