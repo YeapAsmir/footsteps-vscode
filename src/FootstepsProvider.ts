@@ -323,7 +323,6 @@ export class FootstepsProvider {
             index++;
         }
         
-        // Disposer les décorations focalisées
         this.focusedDecorationTypes.forEach(decoration => {
             decoration.dispose();
         });
@@ -385,7 +384,6 @@ export class FootstepsProvider {
                 this.editorFileNames[editorIndex] = uri;
             }
     
-            this.clearChanges(editorIndex);
             const isCodeEditor = this.isCodeEditor(editor.document);
             if (!isCodeEditor) return;
     
@@ -402,13 +400,16 @@ export class FootstepsProvider {
                 [editor.selection.start.line, editor.selection.end.line] : [0, 0];
     
             const fileChanges = this.getChangesInFile(fileName);
+            
+            const newDecorations: Map<string, { range: Range[], decoration: TextEditorDecorationType }> = new Map();
+            
+            const decorationsToKeep: Set<string> = new Set();
     
             fileChanges.forEach(([_, lines], index: number) => {
                 let filteredLines = lines;
                 let focusedLines: number[] = [];
                 
                 if (editor.selection && this.minDistanceFromCursorToHighlight) {
-                    // Séparer les lignes en deux groupes : celles qui sont loin du curseur et celles qui sont proches
                     const farLines: number[] = [];
                     const nearLines: number[] = [];
                     
@@ -425,13 +426,11 @@ export class FootstepsProvider {
                     
                     filteredLines = farLines;
                     
-                    // Si nous avons des lignes proches du curseur, nous les traiterons différemment
                     if (nearLines.length > 0) {
                         focusedLines = nearLines;
                     }
                 }
                 
-                // Gérer les chunks focalisés
                 if (editor.selection) {
                     const linesRange = [Math.min(...lines), Math.max(...lines)];
                     const isCurrentChunk =
@@ -439,38 +438,59 @@ export class FootstepsProvider {
                     
                     if (isCurrentChunk) {
                         if (this.doHighlightCurrentlyFocusedChunk) {
-                            // Utiliser l'opacité réduite pour les chunks focalisés
                             focusedLines = [...new Set([...focusedLines, ...lines])];
                             filteredLines = filteredLines.filter(line => !focusedLines.includes(line));
                         } else {
-                            // Comportement original : ne pas afficher les chunks focalisés
                             filteredLines = [];
                             focusedLines = [];
                         }
                     }
                 }
                 
-                // Appliquer les décorations standard pour les lignes filtrées
                 if (filteredLines.length > 0 && this.decorationTypes?.[editorIndex]?.[index]) {
-                    onHighlightLine(editor, filteredLines, this.decorationTypes[editorIndex][index]);
+                    const ranges = filteredLines.map(line => 
+                        new Range(new Position(line, 0), new Position(line, Number.MAX_SAFE_INTEGER))
+                    );
+                    const decorationKey = `standard-${fileName}-${index}`;
+                    newDecorations.set(decorationKey, {
+                        range: ranges,
+                        decoration: this.decorationTypes[editorIndex][index]
+                    });
+                    decorationsToKeep.add(decorationKey);
                 }
                 
-                // Appliquer les décorations avec opacité réduite pour les lignes focalisées
                 if (focusedLines.length > 0) {
-                    // Créer une clé unique pour cette décoration focalisée
-                    const decorationKey = `${fileName}-${index}`;
+                    const decorationKey = `focused-${fileName}-${index}`;
+                    decorationsToKeep.add(decorationKey);
                     
-                    // Disposer l'ancienne décoration si elle existe
+                    let focusedDecoration: TextEditorDecorationType;
                     if (this.focusedDecorationTypes.has(decorationKey)) {
-                        this.focusedDecorationTypes.get(decorationKey)?.dispose();
+                        focusedDecoration = this.focusedDecorationTypes.get(decorationKey)!;
+                    } else {
+                        focusedDecoration = this.getFocusedDecorationTypes();
+                        this.focusedDecorationTypes.set(decorationKey, focusedDecoration);
                     }
                     
-                    // Créer une nouvelle décoration et la stocker
-                    const focusedDecoration = this.getFocusedDecorationTypes();
-                    this.focusedDecorationTypes.set(decorationKey, focusedDecoration);
+                    const ranges = focusedLines.map(line => 
+                        new Range(new Position(line, 0), new Position(line, Number.MAX_SAFE_INTEGER))
+                    );
                     
-                    // Appliquer la décoration
-                    onHighlightLine(editor, focusedLines, focusedDecoration);
+                    newDecorations.set(decorationKey, {
+                        range: ranges,
+                        decoration: focusedDecoration
+                    });
+                }
+            });
+            
+            newDecorations.forEach(({ range, decoration }) => {
+                editor.setDecorations(decoration, range);
+            });
+            
+            this.focusedDecorationTypes.forEach((decoration, key) => {
+                if (!decorationsToKeep.has(key)) {
+                    editor.setDecorations(decoration, []);
+                    decoration.dispose();
+                    this.focusedDecorationTypes.delete(key);
                 }
             });
         };
