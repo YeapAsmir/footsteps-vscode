@@ -98,6 +98,11 @@
           "default": 0.4,
           "description": "The maximum opacity for highlighting recently changed lines (0 - 1)"
         },
+        "footsteps.highlightColorFocusedOpacity": {
+          "type": "number",
+          "default": 0.15,
+          "description": "The opacity for highlighting currently focused chunks (0 - 1). Used when doHighlightCurrentlyFocusedChunk is true."
+        },
         "footsteps.doHighlightChanges": {
           "type": "boolean",
           "default": true,
@@ -106,8 +111,8 @@
         },
         "footsteps.doHighlightCurrentlyFocusedChunk": {
           "type": "boolean",
-          "default": false,
-          "description": "Turn off to prevent highlighting the currently focused chunk of edited code."
+          "default": true,
+          "description": "When enabled, the currently focused chunk will be highlighted with reduced opacity (defined by highlightColorFocusedOpacity). When disabled, the currently focused chunk won't be highlighted at all."
         },
         "footsteps.doHighlightEmptyLines": {
           "type": "boolean",
