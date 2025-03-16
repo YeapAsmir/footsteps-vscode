@@ -9,41 +9,41 @@ import {
 	WorkspaceEdit,
 	ConfigurationTarget,
 } from "vscode";
-import { FootstepsProvider } from "./FootstepsProvider";
+import { ReTraceProvider } from "./ReTraceProvider";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: ExtensionContext) {
-	const footstepsProvider = new FootstepsProvider();
+	const retraceProvider = new ReTraceProvider();
 
-	// languages.registerDocumentHighlightProvider("*", footstepsProvider);
+	// languages.registerDocumentHighlightProvider("*", retraceProvider);
 
-	commands.registerCommand("footsteps.skipBack", () => {
-		footstepsProvider.onTimeTravel(-1);
+	commands.registerCommand("retrace.skipBack", () => {
+		retraceProvider.onTimeTravel(-1);
 	});
 
-	commands.registerCommand("footsteps.skipForwards", () => {
-		footstepsProvider.onTimeTravel(1);
+	commands.registerCommand("retrace.skipForwards", () => {
+		retraceProvider.onTimeTravel(1);
 	});
 
-	commands.registerCommand("footsteps.skipBackSameFile", () => {
-		footstepsProvider.onTimeTravel(-1, "within-file");
+	commands.registerCommand("retrace.skipBackSameFile", () => {
+		retraceProvider.onTimeTravel(-1, "within-file");
 	});
 
-	commands.registerCommand("footsteps.skipForwardsSameFile", () => {
-		footstepsProvider.onTimeTravel(1, "within-file");
+	commands.registerCommand("retrace.skipForwardsSameFile", () => {
+		retraceProvider.onTimeTravel(1, "within-file");
 	});
 
-	commands.registerCommand("footsteps.skipBackDifferentFile", () => {
-		footstepsProvider.onTimeTravel(-1, "across-files");
+	commands.registerCommand("retrace.skipBackDifferentFile", () => {
+		retraceProvider.onTimeTravel(-1, "across-files");
 	});
 
-	commands.registerCommand("footsteps.skipForwardsDifferentFile", () => {
-		footstepsProvider.onTimeTravel(1, "across-files");
+	commands.registerCommand("retrace.skipForwardsDifferentFile", () => {
+		retraceProvider.onTimeTravel(1, "across-files");
 	});
 
-	commands.registerCommand("footsteps.toggleHighlightingLines", async () => {
-		const userSetting = workspace.getConfiguration("footsteps");
+	commands.registerCommand("retrace.toggleHighlightingLines", async () => {
+		const userSetting = workspace.getConfiguration("retrace");
 		const doHighlightChanges = userSetting.get("doHighlightChanges");
 		const specificSetting = userSetting.inspect("doHighlightChanges");
 		const doSetAsGlobal =
@@ -55,19 +55,19 @@ export function activate(context: ExtensionContext) {
 		);
 	});
 
-	commands.registerCommand("footsteps.clearChangesWithinFile", () => {
+	commands.registerCommand("retrace.clearChangesWithinFile", () => {
 		const document = window?.activeTextEditor?.document;
 		if (!document) return;
 		if (!window?.activeTextEditor) return;
-		footstepsProvider.onClearChangesWithinFile(document, window?.activeTextEditor);
+		retraceProvider.onClearChangesWithinFile(document, window?.activeTextEditor);
 	});
 
-	commands.registerCommand("footsteps.clearProjectChanges", () => {
-		footstepsProvider.onClearProjectChanges();
+	commands.registerCommand("retrace.clearProjectChanges", () => {
+		retraceProvider.onClearProjectChanges();
 	});
 
 	workspace.onDidChangeTextDocument((event) => {
-		footstepsProvider.onTextChange([...event.contentChanges], event.document);
+		retraceProvider.onTextChange([...event.contentChanges], event.document);
 	});
 }
 

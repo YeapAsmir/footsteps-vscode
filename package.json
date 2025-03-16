@@ -1,19 +1,9 @@
 {
-  "name": "footsteps",
-  "displayName": "footsteps",
+  "name": "retrace",
+  "displayName": "ReTrace",
   "description": "Highlight and navigate between your most recently edited chunks of code",
   "version": "1.0.0",
-  "publisher": "Wattenberger",
-  "icon": "icon.png",
-  "author": {
-    "name": "Amelia Wattenberger",
-    "email": "wattenberger@gmail.com",
-    "url": "http://wattenberger.com"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/wattenberger/footsteps-vscode.git"
-  },
+  "publisher": "Asmir",
   "engines": {
     "vscode": "^1.51.0"
   },
@@ -27,124 +17,124 @@
   "contributes": {
     "commands": [
       {
-        "title": "Skip back in footsteps",
-        "command": "footsteps.skipBack",
-        "category": "Footsteps navigation"
+        "title": "Skip back in retrace",
+        "command": "retrace.skipBack",
+        "category": "retrace navigation"
       },
       {
-        "title": "Skip forwards in footsteps",
-        "command": "footsteps.skipForwards",
-        "category": "Footsteps navigation"
+        "title": "Skip forwards in retrace",
+        "command": "retrace.skipForwards",
+        "category": "retrace navigation"
       },
       {
-        "title": "Skip back in footsteps (same file)",
-        "command": "footsteps.skipBackSameFile",
-        "category": "Footsteps navigation"
+        "title": "Skip back in retrace (same file)",
+        "command": "retrace.skipBackSameFile",
+        "category": "retrace navigation"
       },
       {
-        "title": "Skip forwards in footsteps (same file)",
-        "command": "footsteps.skipForwardsSameFile",
-        "category": "Footsteps navigation"
+        "title": "Skip forwards in retrace (same file)",
+        "command": "retrace.skipForwardsSameFile",
+        "category": "retrace navigation"
       },
       {
-        "title": "Skip back in footsteps (different file)",
-        "command": "footsteps.skipBackDifferentFile",
-        "category": "Footsteps navigation"
+        "title": "Skip back in retrace (different file)",
+        "command": "retrace.skipBackDifferentFile",
+        "category": "retrace navigation"
       },
       {
-        "title": "Skip forwards in footsteps (different file)",
-        "command": "footsteps.skipForwardsDifferentFile",
-        "category": "Footsteps navigation"
+        "title": "Skip forwards in retrace (different file)",
+        "command": "retrace.skipForwardsDifferentFile",
+        "category": "retrace navigation"
       },
       {
         "title": "Clear changes within file",
-        "command": "footsteps.clearChangesWithinFile",
-        "category": "Footsteps navigation"
+        "command": "retrace.clearChangesWithinFile",
+        "category": "retrace navigation"
       },
       {
         "title": "Clear all changes in project",
-        "command": "footsteps.clearProjectChanges",
-        "category": "Footsteps navigation"
+        "command": "retrace.clearProjectChanges",
+        "category": "retrace navigation"
       },
       {
         "title": "Toggle highlighting lines",
-        "command": "footsteps.toggleHighlightingLines",
-        "category": "Footsteps navigation"
+        "command": "retrace.toggleHighlightingLines",
+        "category": "retrace navigation"
       }
     ],
     "keybindings": [
       {
-        "command": "footsteps.skipBack",
+        "command": "retrace.skipBack",
         "key": "ctrl+alt+left",
         "mac": "ctrl+alt+left"
       },
       {
-        "command": "footsteps.skipForwards",
+        "command": "retrace.skipForwards",
         "key": "ctrl+alt+right",
         "mac": "ctrl+alt+right"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "Footsteps configuration",
+      "title": "retrace configuration",
       "properties": {
-        "footsteps.highlightColor": {
+        "retrace.highlightColor": {
           "type": "string",
           "default": "rgb(153, 128, 250)",
           "description": "The color of the highlighted trail (in rgb format). I'd recommend keeping this subtle - black (`rgb(0, 0, 0)`) if you have a dark theme and white (`rgb(255, 255, 255)`) if you have a light theme."
         },
-        "footsteps.highlightColorMaxOpacity": {
+        "retrace.highlightColorMaxOpacity": {
           "type": "number",
           "default": 0.4,
           "description": "The maximum opacity for highlighting recently changed lines (0 - 1)"
         },
-        "footsteps.highlightColorFocusedOpacity": {
+        "retrace.highlightColorFocusedOpacity": {
           "type": "number",
           "default": 0.15,
           "description": "The opacity for highlighting currently focused chunks (0 - 1). Used when doHighlightCurrentlyFocusedChunk is true."
         },
-        "footsteps.doHighlightChanges": {
+        "retrace.doHighlightChanges": {
           "type": "boolean",
           "default": true,
           "description": "Turn on to highlight changed lines (historical changes will still be saved, for navigation)",
           "scope": "language-overridable"
         },
-        "footsteps.doHighlightCurrentlyFocusedChunk": {
+        "retrace.doHighlightCurrentlyFocusedChunk": {
           "type": "boolean",
           "default": true,
           "description": "When enabled, the currently focused chunk will be highlighted with reduced opacity (defined by highlightColorFocusedOpacity). When disabled, the currently focused chunk won't be highlighted at all."
         },
-        "footsteps.doHighlightEmptyLines": {
+        "retrace.doHighlightEmptyLines": {
           "type": "boolean",
           "default": true,
           "description": "Turn on to highlight empty lines."
         },
-        "footsteps.doHighlightOnClick": {
+        "retrace.doHighlightOnClick": {
           "type": "boolean",
           "default": false,
           "description": "Turn on to add highlights when you click on a line."
         },
-        "footsteps.doHighlightInactiveEditors": {
+        "retrace.doHighlightInactiveEditors": {
           "type": "boolean",
           "default": false,
           "description": "Turn on to show highlights in inactive editors (e.g. when you have multiple files open)."
         },
-        "footsteps.maxNumberOfChangesToHighlight": {
+        "retrace.maxNumberOfChangesToHighlight": {
           "type": "number",
           "default": 6,
           "description": "The number of changes to highlight with the background color."
         },
-        "footsteps.maxNumberOfChangesToRemember": {
+        "retrace.maxNumberOfChangesToRemember": {
           "type": "number",
           "default": 10,
           "description": "The number of changes to save in history for using your keybindings to navigate between."
         },
-        "footsteps.minDistanceFromCursorToHighlight": {
+        "retrace.minDistanceFromCursorToHighlight": {
           "type": "number",
           "default": 2,
           "description": "The minimum distance from the cursor to highlight a line."
         },
-        "footsteps.clearChangesOnFileSave": {
+        "retrace.clearChangesOnFileSave": {
           "type": "boolean",
           "default": false,
           "description": "Turn on to clear all changes within a file when you save it."
