@@ -14,7 +14,7 @@ import {
 import { onHighlightLine } from "./decorator";
 import { History, HistoryItem } from "./types";
 
-export class ReTraceProvider {
+export class TracesProvider {
     private history: History = [];
     private currentHistoryIndex: number = 0;
     private decorationTypes: TextEditorDecorationType[][] = [];
@@ -54,7 +54,7 @@ export class ReTraceProvider {
         });
 
         workspace.onDidChangeConfiguration((event) => {
-            if (!event.affectsConfiguration("retrace")) {
+            if (!event.affectsConfiguration("traces")) {
                 return;
             }
             this.onSyncWithSettings();
@@ -70,7 +70,7 @@ export class ReTraceProvider {
     }
 
     private onSyncWithSettings(): void {
-        const userSetting = workspace.getConfiguration("retrace");
+        const userSetting = workspace.getConfiguration("traces");
 
         if (this.doHighlightChanges && !userSetting.doHighlightChanges) {
             this.clearChanges();
@@ -392,7 +392,7 @@ export class ReTraceProvider {
     
             const language = editor.document.languageId;
             const doHighlightChangesForLanguage = this.doHighlightChangesPerLanguage[language]
-                || workspace.getConfiguration("retrace", {
+                || workspace.getConfiguration("traces", {
                     languageId: language,
                 }).doHighlightChanges;
             if (!doHighlightChangesForLanguage) return;

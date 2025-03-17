@@ -1,6 +1,6 @@
 {
-  "name": "retrace",
-  "displayName": "ReTrace",
+  "name": "traces",
+  "displayName": "Traces",
   "description": "Highlight and navigate between your most recently edited chunks of code",
   "version": "1.0.0",
   "publisher": "Asmir",
@@ -17,124 +17,124 @@
   "contributes": {
     "commands": [
       {
-        "title": "Skip back in retrace",
-        "command": "retrace.skipBack",
-        "category": "retrace navigation"
+        "title": "Skip back in traces",
+        "command": "traces.skipBack",
+        "category": "traces navigation"
       },
       {
-        "title": "Skip forwards in retrace",
-        "command": "retrace.skipForwards",
-        "category": "retrace navigation"
+        "title": "Skip forwards in traces",
+        "command": "traces.skipForwards",
+        "category": "traces navigation"
       },
       {
-        "title": "Skip back in retrace (same file)",
-        "command": "retrace.skipBackSameFile",
-        "category": "retrace navigation"
+        "title": "Skip back in traces (same file)",
+        "command": "traces.skipBackSameFile",
+        "category": "traces navigation"
       },
       {
-        "title": "Skip forwards in retrace (same file)",
-        "command": "retrace.skipForwardsSameFile",
-        "category": "retrace navigation"
+        "title": "Skip forwards in traces (same file)",
+        "command": "traces.skipForwardsSameFile",
+        "category": "traces navigation"
       },
       {
-        "title": "Skip back in retrace (different file)",
-        "command": "retrace.skipBackDifferentFile",
-        "category": "retrace navigation"
+        "title": "Skip back in traces (different file)",
+        "command": "traces.skipBackDifferentFile",
+        "category": "traces navigation"
       },
       {
-        "title": "Skip forwards in retrace (different file)",
-        "command": "retrace.skipForwardsDifferentFile",
-        "category": "retrace navigation"
+        "title": "Skip forwards in traces (different file)",
+        "command": "traces.skipForwardsDifferentFile",
+        "category": "traces navigation"
       },
       {
         "title": "Clear changes within file",
-        "command": "retrace.clearChangesWithinFile",
-        "category": "retrace navigation"
+        "command": "traces.clearChangesWithinFile",
+        "category": "traces navigation"
       },
       {
         "title": "Clear all changes in project",
-        "command": "retrace.clearProjectChanges",
-        "category": "retrace navigation"
+        "command": "traces.clearProjectChanges",
+        "category": "traces navigation"
       },
       {
         "title": "Toggle highlighting lines",
-        "command": "retrace.toggleHighlightingLines",
-        "category": "retrace navigation"
+        "command": "traces.toggleHighlightingLines",
+        "category": "traces navigation"
       }
     ],
     "keybindings": [
       {
-        "command": "retrace.skipBack",
+        "command": "traces.skipBack",
         "key": "ctrl+alt+left",
         "mac": "ctrl+alt+left"
       },
       {
-        "command": "retrace.skipForwards",
+        "command": "traces.skipForwards",
         "key": "ctrl+alt+right",
         "mac": "ctrl+alt+right"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "retrace configuration",
+      "title": "traces configuration",
       "properties": {
-        "retrace.highlightColor": {
+        "traces.highlightColor": {
           "type": "string",
           "default": "rgb(153, 128, 250)",
           "description": "The color of the highlighted trail (in rgb format). I'd recommend keeping this subtle - black (`rgb(0, 0, 0)`) if you have a dark theme and white (`rgb(255, 255, 255)`) if you have a light theme."
         },
-        "retrace.highlightColorMaxOpacity": {
+        "traces.highlightColorMaxOpacity": {
           "type": "number",
           "default": 0.4,
           "description": "The maximum opacity for highlighting recently changed lines (0 - 1)"
         },
-        "retrace.highlightColorFocusedOpacity": {
+        "traces.highlightColorFocusedOpacity": {
           "type": "number",
           "default": 0.15,
           "description": "The opacity for highlighting currently focused chunks (0 - 1). Used when doHighlightCurrentlyFocusedChunk is true."
         },
-        "retrace.doHighlightChanges": {
+        "traces.doHighlightChanges": {
           "type": "boolean",
           "default": true,
           "description": "Turn on to highlight changed lines (historical changes will still be saved, for navigation)",
           "scope": "language-overridable"
         },
-        "retrace.doHighlightCurrentlyFocusedChunk": {
+        "traces.doHighlightCurrentlyFocusedChunk": {
           "type": "boolean",
           "default": true,
           "description": "When enabled, the currently focused chunk will be highlighted with reduced opacity (defined by highlightColorFocusedOpacity). When disabled, the currently focused chunk won't be highlighted at all."
         },
-        "retrace.doHighlightEmptyLines": {
+        "traces.doHighlightEmptyLines": {
           "type": "boolean",
           "default": true,
           "description": "Turn on to highlight empty lines."
         },
-        "retrace.doHighlightOnClick": {
+        "traces.doHighlightOnClick": {
           "type": "boolean",
           "default": false,
           "description": "Turn on to add highlights when you click on a line."
         },
-        "retrace.doHighlightInactiveEditors": {
+        "traces.doHighlightInactiveEditors": {
           "type": "boolean",
           "default": false,
           "description": "Turn on to show highlights in inactive editors (e.g. when you have multiple files open)."
         },
-        "retrace.maxNumberOfChangesToHighlight": {
+        "traces.maxNumberOfChangesToHighlight": {
           "type": "number",
           "default": 6,
           "description": "The number of changes to highlight with the background color."
         },
-        "retrace.maxNumberOfChangesToRemember": {
+        "traces.maxNumberOfChangesToRemember": {
           "type": "number",
           "default": 10,
           "description": "The number of changes to save in history for using your keybindings to navigate between."
         },
-        "retrace.minDistanceFromCursorToHighlight": {
+        "traces.minDistanceFromCursorToHighlight": {
           "type": "number",
           "default": 2,
           "description": "The minimum distance from the cursor to highlight a line."
         },
-        "retrace.clearChangesOnFileSave": {
+        "traces.clearChangesOnFileSave": {
           "type": "boolean",
           "default": false,
           "description": "Turn on to clear all changes within a file when you save it."
